@@ -1,8 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+interface WeatherResponse {
+  weather: { icon: string; description: string }[];
+  main: {
+    temp: number;
+    humidity: number;
+    pressure: number;
+    feels_like: number;
+  };
+  wind: {
+    speed: number;
+  };
+  sys: {
+    country: string;
+  };
+  name: string;
+}
+
 const App = () => {
-  const [weatherData, setWeatherData] = useState(null);
+  const [weatherData, setWeatherData] = useState<WeatherResponse | null>(null);
   const [city, setCity] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -254,7 +271,7 @@ const App = () => {
     };
   }, []);
 
-  const getWeatherIcon = (weather) => {
+  const getWeatherIcon = (weather: { icon: string }[]) => {
     const iconCode = weather[0].icon;
     return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
   };
@@ -271,7 +288,8 @@ const App = () => {
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        ({ coords }) => fetchWeatherByCoords(coords.latitude, coords.longitude),
+        ({ coords }: GeolocationPosition) =>
+          fetchWeatherByCoords(coords.latitude, coords.longitude),
         () => {
           setError('Location access denied. Showing New York.');
           fetchWeatherByCity('New York');
@@ -283,14 +301,15 @@ const App = () => {
     }
   }, []);
 
-  const fetchWeatherByCoords = async (lat, lon) => {
+  const fetchWeatherByCoords = async (lat: number, lon: number) => {
     setLoading(true);
     try {
       const API_KEY = 'f00c38e0279b7bc85480c3fe775d518c';
-      const res = await axios.get(
+      const res = await axios.get<WeatherResponse>(
         `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
       );
       setWeatherData(res.data);
+      setError('');
     } catch {
       setError('Failed to load weather.');
     } finally {
@@ -298,14 +317,15 @@ const App = () => {
     }
   };
 
-  const fetchWeatherByCity = async (cityName) => {
+  const fetchWeatherByCity = async (cityName: string) => {
     setLoading(true);
     try {
       const API_KEY = 'f00c38e0279b7bc85480c3fe775d518c';
-      const res = await axios.get(
+      const res = await axios.get<WeatherResponse>(
         `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric`
       );
       setWeatherData(res.data);
+      setError('');
     } catch {
       setError('City not found.');
     } finally {
@@ -313,7 +333,7 @@ const App = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (city.trim()) {
       fetchWeatherByCity(city.trim());
